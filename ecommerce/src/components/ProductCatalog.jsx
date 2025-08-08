@@ -3,6 +3,8 @@ import { useDispatch } from "react-redux";
 import { addCart } from "../redux/action";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import NaturalLanguageSearch from "./NaturalLanguageSearch";
+import { filterProductsWithNLP } from "../utils/nlpSearch";
 
 const ProductCatalog = () => {
   const dispatch = useDispatch();
@@ -123,6 +125,9 @@ const ProductCatalog = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
+  const [isNLPLoading, setIsNLPLoading] = useState(false);
+  const [currentNLPQuery, setCurrentNLPQuery] = useState("");
+  const [isUsingNLP, setIsUsingNLP] = useState(false);
 
   const addProduct = (product) => {
     dispatch(addCart(product));
@@ -177,7 +182,40 @@ const ProductCatalog = () => {
   const handleSearch = (e) => {
     const search = e.target.value;
     setSearchTerm(search);
+    setIsUsingNLP(false);
+    setCurrentNLPQuery("");
     filterProducts(selectedCategory, priceRange, search);
+  };
+
+  const handleNLPSearch = async (parsedQuery, originalQuery) => {
+    setIsNLPLoading(true);
+    setIsUsingNLP(true);
+    setCurrentNLPQuery(originalQuery);
+    
+    try {
+      const results = filterProductsWithNLP(products, parsedQuery);
+      setFilteredProducts(results);
+      
+      toast.success(`Found ${results.length} products matching your search`);
+      
+      setSearchTerm("");
+      setSelectedCategory("all");
+      setPriceRange("all");
+    } catch (error) {
+      console.error('NLP search error:', error);
+      toast.error('Search failed. Please try again.');
+    } finally {
+      setIsNLPLoading(false);
+    }
+  };
+
+  const clearNLPSearch = () => {
+    setIsUsingNLP(false);
+    setCurrentNLPQuery("");
+    setFilteredProducts(products);
+    setSearchTerm("");
+    setSelectedCategory("all");
+    setPriceRange("all");
   };
 
   const renderStars = (rating) => {
@@ -207,6 +245,31 @@ const ProductCatalog = () => {
         </div>
       </div>
 
+      <NaturalLanguageSearch 
+        onSearch={handleNLPSearch}
+        isLoading={isNLPLoading}
+      />
+
+      {isUsingNLP && currentNLPQuery && (
+        <div className="row mb-3">
+          <div className="col-12">
+            <div className="alert alert-info d-flex align-items-center">
+              <i className="fas fa-info-circle me-2"></i>
+              <span>
+                Showing results for: <strong>"{currentNLPQuery}"</strong>
+              </span>
+              <button 
+                className="btn btn-sm btn-outline-secondary ms-auto"
+                onClick={clearNLPSearch}
+              >
+                <i className="fas fa-times me-1"></i>
+                Clear NLP Search
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="row mb-4">
         <div className="col-md-4 mb-3">
           <input
@@ -215,13 +278,18 @@ const ProductCatalog = () => {
             placeholder="Search products..."
             value={searchTerm}
             onChange={handleSearch}
+            disabled={isUsingNLP}
           />
+          {isUsingNLP && (
+            <small className="text-muted">Traditional search disabled while using NLP search</small>
+          )}
         </div>
         <div className="col-md-4 mb-3">
           <select 
             className="form-select"
             value={selectedCategory}
             onChange={(e) => handleCategoryFilter(e.target.value)}
+            disabled={isUsingNLP}
           >
             <option value="all">All Categories</option>
             <option value="electronics">Electronics</option>
@@ -235,6 +303,7 @@ const ProductCatalog = () => {
             className="form-select"
             value={priceRange}
             onChange={(e) => handlePriceFilter(e.target.value)}
+            disabled={isUsingNLP}
           >
             <option value="all">All Prices</option>
             <option value="under-50">Under $50</option>
