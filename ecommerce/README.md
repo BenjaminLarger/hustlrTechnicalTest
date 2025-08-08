@@ -22,10 +22,6 @@ cd ecommerce
 ```bash
 npm install
 ```
-*Note: If you encounter peer dependency issues, use:*
-```bash
-npm install react-material-ui-carousel --save --legacy-peer-deps
-```
 
 4. Set up environment variables (optional for AI features)
 - Create a `.env` file in the root directory

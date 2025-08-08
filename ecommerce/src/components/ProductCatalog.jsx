@@ -98,7 +98,7 @@ const ProductCatalog = () => {
       category: "electronics",
       description: "High-performance 50mm f/1.8 lens for DSLR cameras. Perfect for portraits and low-light photography.",
       rating: 4.9,
-      image: "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=500&h=500&fit=crop"
+      image: "https://images.unsplash.com/photo-1516724562728-afc824a36e84?q=crop"
     },
     {
       id: 11,
